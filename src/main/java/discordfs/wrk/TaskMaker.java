@@ -45,14 +45,13 @@ public final class TaskMaker {
             @Override
             protected Void call() throws Exception {
                 updateTitle("Creating \"" + newDir.getName() + "\" folder");
-                updateProgress(0, 100);
+                updateProgress(0, 2);
                 Message m = discord.treeGet(newDir.getParent().getCompleteId() + "");
-                updateProgress(50, 100);
+                updateProgress(1, 2);
                 String[] content = m.getContent().split("\\?", -1);
                 String dirs = content[1];
                 dirs += newDir.getId() + "/";
                 m.editMessage(content[0] + "?" + dirs + "?" + content[2]).complete();
-                updateProgress(100, 100);
                 return null;
             }
         };
@@ -60,32 +59,16 @@ public final class TaskMaker {
 
     public Task deleteFolder(Directory dir) {
         return new Task<Void>() {
-
-            private int progress = 0;
-            private int max = dir.getSize() + 2;
-
             @Override
             protected Void call() throws Exception {
                 updateTitle("Deleting \"" + dir.getName() + "\" folder");
-                updateProgress(progress, max);
-                deleteCascade(dir);
+                updateProgress(0, 2);
                 Message m = discord.treeGet(dir.getParent().getCompleteId() + "");
-                updateProgress(progress + 1, max);
+                updateProgress(1, 2);
                 String[] content = m.getContent().split("\\?", -1);
                 content[1] = content[1].replace(dir.getId() + "/", "");
                 m.editMessage(content[0] + "?" + content[1] + "?" + content[2]).complete();
                 return null;
-            }
-
-            private void deleteCascade(File f) {
-                if (f.isDirectory()) {
-                    for (File child : ((Directory) f).getChildren()) {
-                        deleteCascade(child);
-                    }
-                }
-                discord.treeGet(f.getCompleteId() + "").delete().complete();
-                progress++;
-                updateProgress(progress, max);
             }
         };
     }

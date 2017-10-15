@@ -25,7 +25,9 @@ package discordfs.wrk;
 
 import discordfs.beans.Directory;
 import discordfs.beans.File;
+import discordfs.helpers.PropertiesManager;
 import discordfs.helpers.Statics;
+import java.util.Properties;
 import javafx.concurrent.Task;
 
 /**
@@ -58,11 +60,15 @@ public class FilesWrk {
     }
 
     public void delete(File f) {
-        if (!f.isRoot()) {
-            Task<Void> task = tm.deleteFolder((Directory) f);
+        if (f.isDirectory()) {
+            Directory dir = (Directory) f;
+            Task<Void> task = tm.deleteFolder(dir);
             updater.addTask(task);
-            Directory parent = f.getParent();
-            parent.getChildren().remove(f);
+            if (f.isRoot()) {
+                PropertiesManager.setRootMessageID(discord.treeSend("??"));
+            } else {
+                f.getParent().getChildren().remove(f);
+            }
         }
     }
 

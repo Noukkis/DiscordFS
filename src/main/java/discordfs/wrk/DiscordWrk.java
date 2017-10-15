@@ -23,10 +23,12 @@
  */
 package discordfs.wrk;
 
+import discordfs.helpers.PropertiesManager;
 import discordfs.helpers.Statics;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.TextChannel;
+import net.dv8tion.jda.core.exceptions.ErrorResponseException;
 
 /**
  *
@@ -40,6 +42,11 @@ public class DiscordWrk {
     public DiscordWrk(JDA jda) {
         treeChan = jda.getTextChannelById(Statics.TREE_CHAN_ID);
         filesChan = jda.getTextChannelById(Statics.FILES_CHAN_ID);
+        try {
+            getRoot();
+        } catch (ErrorResponseException e) {
+            PropertiesManager.setRootMessageID(treeSend("??"));
+        }
     }
 
     public String treeSend(String s) {

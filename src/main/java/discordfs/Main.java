@@ -23,6 +23,8 @@
  */
 package discordfs;
 
+import discordfs.helpers.PropertiesManager;
+import java.util.Properties;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -37,6 +39,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        PropertiesManager.init();
         Parent root = FXMLLoader.load(getClass().getResource("/fxml/View.fxml"));
         Scene scene = new Scene(root);
         stage.setScene(scene);

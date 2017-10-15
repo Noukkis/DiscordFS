@@ -34,6 +34,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javax.security.auth.login.LoginException;
@@ -82,10 +83,17 @@ public class Ctrl implements Initializable {
     @FXML
     private void onNewFolder(ActionEvent event) {
         TreeItem<File> selected = tree.getSelectionModel().getSelectedItem();
-        File f = wrk.createFolder(selected.getValue(), "test" + (int) (Math.random() * 1000));
-        TreeItem<File> newItem = new TreeItem<>(f);
-        selected.getChildren().add(newItem);
-        tree.getSelectionModel().select(newItem);
+
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Nouveau dossier");
+        dialog.setHeaderText("Nom du nouveau dossier");
+        dialog.setContentText("Veuillez entrer le nom du dossier :");
+        dialog.showAndWait().ifPresent((name) -> {
+            File f = wrk.createFolder(selected.getValue(), name);
+            TreeItem<File> newItem = new TreeItem<>(f);
+            selected.getChildren().add(newItem);
+            tree.getSelectionModel().select(newItem);
+        });
     }
 
     @FXML
