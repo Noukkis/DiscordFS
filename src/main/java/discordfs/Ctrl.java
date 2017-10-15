@@ -126,11 +126,13 @@ public class Ctrl implements Initializable {
 
     public TreeItem<FileView> createTreeItem(FileView value) {
         TreeItem<FileView> ti = new TreeItem<>(value);
-        ti.expandedProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue) {
-                itemOnExpand(ti);
-            }
-        });
+        if (value.isDirectory()) {
+            ti.expandedProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue) {
+                    itemOnExpand(ti);
+                }
+            });
+        }
         return ti;
     }
 

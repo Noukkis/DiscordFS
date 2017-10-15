@@ -49,7 +49,7 @@ public class FilesWrk {
     public DirectoryView createFolder(FileView f, String name) {
         DirectoryView parent = f.isDirectory() ? (DirectoryView) f : f.getParent();
         String id = discord.treeSend(name + "??");
-        DirectoryView newFolder = new DirectoryView(parent, name, Long.parseLong(id));
+        DirectoryView newFolder = new DirectoryView(parent, name, id);
         parent.getChildren().add(newFolder);
         Task<Void> task = tm.createFolder(newFolder);
         updater.addTask(task);
@@ -60,15 +60,12 @@ public class FilesWrk {
     }
 
     public void delete(FileView f) {
-        if (f.isDirectory()) {
-            DirectoryView dir = (DirectoryView) f;
-            Task<Void> task = tm.deleteFolder(dir);
+        if (f.isRoot()) {
+            PropertiesManager.setRootMessageID(discord.treeSend("??"));
+        } else {
+            Task<Void> task = tm.delete(f);
             updater.addTask(task);
-            if (f.isRoot()) {
-                PropertiesManager.setRootMessageID(discord.treeSend("??"));
-            } else {
-                f.getParent().getChildren().remove(f);
-            }
+            f.getParent().getChildren().remove(f);
         }
     }
 
@@ -78,32 +75,49 @@ public class FilesWrk {
 
     public DirectoryView getRoot() {
         DirectoryView root = new DirectoryView(null, "", Statics.ROOT_MESSAGE_ID, true);
-        setChildren(root, discord.getRoot().getContent().split("\\?", -1)[1]);
+        setChildren(root, discord.getRoot().getContent().split("\\?", -1));
         return root;
     }
 
     public void setDirectoryChildren(DirectoryView dir) {
-        setChildren(dir, discord.treeGet(dir.getCompleteId() + "").getContent().split("\\?", -1)[1]);
+        setChildren(dir, discord.treeGet(dir.getId() + "").getContent().split("\\?", -1));
     }
 
-    private void setChildren(DirectoryView dir, String dirs) {
+    private void setChildren(DirectoryView dir, String[] msgContent) {
+        String dirs = msgContent[1];
+        String files = msgContent[2];
         if (!dirs.isEmpty()) {
             for (String id : dirs.split("/")) {
-                long completeID = Long.parseLong(id) + dir.getCompleteId();
-                String[] content = discord.treeGet(completeID + "").getContent().split("\\?", -1);
-                DirectoryView child = new DirectoryView(dir, content[0], completeID);
+                String[] content = discord.treeGet(id).getContent().split("\\?", -1);
+                DirectoryView child = new DirectoryView(dir, content[0], id);
                 dir.getChildren().add(child);
             }
         }
+        if (!files.isEmpty()) {
+            for (String id : files.split("/")) {
+                String[] content = discord.treeGet(id).getContent().split("\\?", -1);
+                FileView child = new FileView(dir, content[0], id);
+                dir.getChildren().add(child);
+            }
+        }
+
     }
 
-    public DirectoryView upload(File file, FileView fw) {
-        if(file.isDirectory()) {
-            DirectoryView dw = createFolder(fw, file.getName());
+    public FileView upload(File file, DirectoryView parent) {
+        if (file.isDirectory()) {
+            DirectoryView newDir = createFolder(parent, file.getName());
             for (File f : file.listFiles()) {
-                upload(f, dw);
+                upload(f, newDir);
             }
-            return dw;
+            return newDir;
+        }
+        if (file.exists()) {
+            String ID = discord.treeSend(file.getName() + "?");
+            Task<Void> task = tm.upload(file, ID, parent);
+            updater.addTask(task);
+            FileView newFile = new FileView(parent, file.getName(), ID);
+            parent.getChildren().add(newFile);
+            return newFile;
         }
         return null;
     }

@@ -33,11 +33,11 @@ public class DirectoryView extends FileView {
 
     private ArrayList<FileView> children;
 
-    public DirectoryView(DirectoryView parent, String name, long id) {
+    public DirectoryView(DirectoryView parent, String name, String id) {
         this(parent, name, id, false);
     }
 
-    public DirectoryView(DirectoryView parent, String name, long id, boolean root) {
+    public DirectoryView(DirectoryView parent, String name, String id, boolean root) {
         super(parent, name, id, root);
         this.children = new ArrayList<>();
     }

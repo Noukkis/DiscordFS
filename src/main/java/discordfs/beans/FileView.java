@@ -34,16 +34,16 @@ public class FileView {
     private final DirectoryView parent;
     private final String name;
     private boolean root;
-    private final long id;
+    private final String id;
 
-    public FileView(DirectoryView parent, String name, long id, boolean root) {
+    public FileView(DirectoryView parent, String name, String id, boolean root) {
         this.parent = parent;
         this.name = name;
         this.root = root;
-        this.id = (root) ? id : id - parent.getCompleteId();
+        this.id = id;
     }
 
-    public FileView(DirectoryView parent, String name, long id) {
+    public FileView(DirectoryView parent, String name, String id) {
         this(parent, name, id, false);
     }
 
@@ -63,12 +63,8 @@ public class FileView {
         return name;
     }
 
-    public long getId() {
+    public String getId() {
         return id;
-    }
-
-    public long getCompleteId() {
-        return (root) ? id : (id + parent.getCompleteId());
     }
 
     @Override

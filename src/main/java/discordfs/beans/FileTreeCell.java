@@ -77,7 +77,7 @@ public class FileTreeCell extends TreeCell<FileView> {
         setOnDragDropped((event) -> {
             if (!empty && item != null && item.isDirectory()) {
                 for (File file : event.getDragboard().getFiles()) {
-                    FileView fw = ctrl.getWrk().upload(file, item);
+                    FileView fw = ctrl.getWrk().upload(file, (DirectoryView) item);
                     TreeItem<FileView> newItem = ctrl.createTreeItem(fw);
                     getTreeItem().getChildren().add(newItem);
                 }

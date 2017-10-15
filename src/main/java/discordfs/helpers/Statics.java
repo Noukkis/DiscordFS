@@ -1,28 +1,49 @@
 package discordfs.helpers;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author Jordan Vesy
  */
 public final class Statics {
-           
+
     public static String BOT_TOKEN;
     public static long TREE_CHAN_ID;
     public static long FILES_CHAN_ID;
-    public static long ROOT_MESSAGE_ID;
+    public static String ROOT_MESSAGE_ID;
+    
+    public static final int MAX_FILE_SIZE = 8388608;
 
-    private Statics() {
+    public static byte[][] splitFile(File f, int size) {
+        try {
+            byte[] data = Files.readAllBytes(f.toPath());
+            int length = data.length;
+            byte[][] res = new byte[(length + size - 1) / size][];
+            int resIndex = 0;
+            int stopIndex = 0;
+
+            for (int startIndex = 0; startIndex + size <= length; startIndex += size) {
+                stopIndex += size;
+                res[resIndex++] = Arrays.copyOfRange(data, startIndex, stopIndex);
+            }
+
+            if (stopIndex < length) {
+                res[resIndex] = Arrays.copyOfRange(data, stopIndex, length);
+            }
+
+            return res;
+        } catch (IOException ex) {
+            Logger.getLogger(Statics.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
     }
 
-    public static List<String> splitString(String s, int size) {
-        List<String> res = new ArrayList<String>();
-        int len = s.length();
-        for (int i = 0; i < len; i += size) {
-            res.add(s.substring(i, Math.min(len, i + size)));
-        }
-        return res;
+    private Statics() {
     }
 }

@@ -25,6 +25,8 @@ package discordfs.wrk;
 
 import discordfs.beans.DirectoryView;
 import discordfs.beans.FileView;
+import discordfs.helpers.Statics;
+import java.io.File;
 import javafx.concurrent.Task;
 import net.dv8tion.jda.core.entities.Message;
 
@@ -46,7 +48,7 @@ public final class TaskMaker {
             protected Void call() throws Exception {
                 updateTitle("Creating \"" + newDir.getName() + "\" folder");
                 updateProgress(0, 2);
-                Message m = discord.treeGet(newDir.getParent().getCompleteId() + "");
+                Message m = discord.treeGet(newDir.getParent().getId() + "");
                 updateProgress(1, 2);
                 String[] content = m.getContent().split("\\?", -1);
                 String dirs = content[1];
@@ -57,17 +59,43 @@ public final class TaskMaker {
         };
     }
 
-    public Task deleteFolder(DirectoryView dir) {
+    public Task delete(FileView f) {
         return new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                updateTitle("Deleting \"" + dir.getName() + "\" folder");
+                updateTitle("Deleting \"" + f.getName() + "\"");
                 updateProgress(0, 2);
-                Message m = discord.treeGet(dir.getParent().getCompleteId() + "");
+                Message m = discord.treeGet(f.getParent().getId());
                 updateProgress(1, 2);
-                String[] content = m.getContent().split("\\?", -1);
-                content[1] = content[1].replace(dir.getId() + "/", "");
-                m.editMessage(content[0] + "?" + content[1] + "?" + content[2]).complete();
+                String content = m.getContent();
+                content = content.replace(f.getId() + "/", "");
+                m.editMessage(content).complete();
+                return null;
+            }
+        };
+    }
+
+    public Task upload(File file, String firstID, DirectoryView parent) {
+        return new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                updateTitle("Uploading \"" + file.getName() + "\"");
+                int progress = 3;
+                updateProgress(0, 1);
+                Message treeMsg = discord.treeGet(firstID);
+                byte[][] bytes = Statics.splitFile(file, Statics.MAX_FILE_SIZE);
+                int max = bytes.length + 5;
+                updateProgress(3, max);
+                String msg = "final";
+                for (int i = 0; i < bytes.length; i++) {
+                    byte[] aByte = bytes[bytes.length - 1 - i];
+                    msg = discord.filesSend(aByte, "part" + i, msg);
+                    progress++;
+                    updateProgress(progress, max);
+                }
+                treeMsg.editMessage(treeMsg.getContent() + msg).complete();
+                Message parentMsg = discord.treeGet(parent.getId());
+                parentMsg.editMessage(parentMsg.getContent() + treeMsg.getId() + "/").complete();
                 return null;
             }
         };
