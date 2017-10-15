@@ -23,11 +23,11 @@
  */
 package discordfs.wrk;
 
-import discordfs.beans.Directory;
-import discordfs.beans.File;
+import discordfs.beans.DirectoryView;
+import discordfs.beans.FileView;
 import discordfs.helpers.PropertiesManager;
 import discordfs.helpers.Statics;
-import java.util.Properties;
+import java.io.File;
 import javafx.concurrent.Task;
 
 /**
@@ -46,22 +46,22 @@ public class FilesWrk {
         tm = new TaskMaker(discord);
     }
 
-    public Directory createFolder(File f, String name) {
-        Directory parent = f.isDirectory() ? (Directory) f : f.getParent();
+    public DirectoryView createFolder(FileView f, String name) {
+        DirectoryView parent = f.isDirectory() ? (DirectoryView) f : f.getParent();
         String id = discord.treeSend(name + "??");
-        Directory newFolder = new Directory(parent, name, Long.parseLong(id));
+        DirectoryView newFolder = new DirectoryView(parent, name, Long.parseLong(id));
         parent.getChildren().add(newFolder);
         Task<Void> task = tm.createFolder(newFolder);
         updater.addTask(task);
         return newFolder;
     }
 
-    public void download(File f) {
+    public void download(FileView f) {
     }
 
-    public void delete(File f) {
+    public void delete(FileView f) {
         if (f.isDirectory()) {
-            Directory dir = (Directory) f;
+            DirectoryView dir = (DirectoryView) f;
             Task<Void> task = tm.deleteFolder(dir);
             updater.addTask(task);
             if (f.isRoot()) {
@@ -76,24 +76,35 @@ public class FilesWrk {
         return updater;
     }
 
-    public Directory getRoot() {
-        Directory root = new Directory(null, "", Statics.ROOT_MESSAGE_ID, true);
+    public DirectoryView getRoot() {
+        DirectoryView root = new DirectoryView(null, "", Statics.ROOT_MESSAGE_ID, true);
         setChildren(root, discord.getRoot().getContent().split("\\?", -1)[1]);
         return root;
     }
 
-    public void setDirectoryChildren(Directory dir) {
+    public void setDirectoryChildren(DirectoryView dir) {
         setChildren(dir, discord.treeGet(dir.getCompleteId() + "").getContent().split("\\?", -1)[1]);
     }
 
-    private void setChildren(Directory dir, String dirs) {
+    private void setChildren(DirectoryView dir, String dirs) {
         if (!dirs.isEmpty()) {
             for (String id : dirs.split("/")) {
                 long completeID = Long.parseLong(id) + dir.getCompleteId();
                 String[] content = discord.treeGet(completeID + "").getContent().split("\\?", -1);
-                Directory child = new Directory(dir, content[0], completeID);
+                DirectoryView child = new DirectoryView(dir, content[0], completeID);
                 dir.getChildren().add(child);
             }
         }
+    }
+
+    public DirectoryView upload(File file, FileView fw) {
+        if(file.isDirectory()) {
+            DirectoryView dw = createFolder(fw, file.getName());
+            for (File f : file.listFiles()) {
+                upload(f, dw);
+            }
+            return dw;
+        }
+        return null;
     }
 }

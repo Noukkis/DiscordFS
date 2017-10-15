@@ -29,21 +29,21 @@ import java.util.Objects;
  *
  * @author Jordan Vesy
  */
-public class File {
+public class FileView {
 
-    private final Directory parent;
+    private final DirectoryView parent;
     private final String name;
     private boolean root;
     private final long id;
 
-    public File(Directory parent, String name, long id, boolean root) {
+    public FileView(DirectoryView parent, String name, long id, boolean root) {
         this.parent = parent;
         this.name = name;
         this.root = root;
         this.id = (root) ? id : id - parent.getCompleteId();
     }
 
-    public File(Directory parent, String name, long id) {
+    public FileView(DirectoryView parent, String name, long id) {
         this(parent, name, id, false);
     }
 
@@ -51,7 +51,7 @@ public class File {
         return 0;
     }
 
-    public Directory getParent() {
+    public DirectoryView getParent() {
         return parent;
     }
 
@@ -97,7 +97,7 @@ public class File {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final File other = (File) obj;
+        final FileView other = (FileView) obj;
         if (!Objects.equals(this.id, other.id)) {
             return false;
         }

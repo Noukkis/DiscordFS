@@ -23,8 +23,8 @@
  */
 package discordfs.wrk;
 
-import discordfs.beans.Directory;
-import discordfs.beans.File;
+import discordfs.beans.DirectoryView;
+import discordfs.beans.FileView;
 import javafx.concurrent.Task;
 import net.dv8tion.jda.core.entities.Message;
 
@@ -40,7 +40,7 @@ public final class TaskMaker {
         this.discord = discord;
     }
 
-    public Task createFolder(Directory newDir) {
+    public Task createFolder(DirectoryView newDir) {
         return new Task<Void>() {
             @Override
             protected Void call() throws Exception {
@@ -57,7 +57,7 @@ public final class TaskMaker {
         };
     }
 
-    public Task deleteFolder(Directory dir) {
+    public Task deleteFolder(DirectoryView dir) {
         return new Task<Void>() {
             @Override
             protected Void call() throws Exception {

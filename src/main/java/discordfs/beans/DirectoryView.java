@@ -29,15 +29,15 @@ import java.util.ArrayList;
  *
  * @author Jordan Vesy
  */
-public class Directory extends File {
+public class DirectoryView extends FileView {
 
-    private ArrayList<File> children;
+    private ArrayList<FileView> children;
 
-    public Directory(Directory parent, String name, long id) {
+    public DirectoryView(DirectoryView parent, String name, long id) {
         this(parent, name, id, false);
     }
 
-    public Directory(Directory parent, String name, long id, boolean root) {
+    public DirectoryView(DirectoryView parent, String name, long id, boolean root) {
         super(parent, name, id, root);
         this.children = new ArrayList<>();
     }
@@ -50,7 +50,7 @@ public class Directory extends File {
     @Override
     public int getSize() {
         int n = 1;
-        for (File child : children) {
+        for (FileView child : children) {
             if(child.isDirectory()) {
                 n += child.getSize();
             }
@@ -58,7 +58,7 @@ public class Directory extends File {
         return n;
     }
 
-    public ArrayList<File> getChildren() {
+    public ArrayList<FileView> getChildren() {
         return children;
     }
 }
