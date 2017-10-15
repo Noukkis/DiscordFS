@@ -56,7 +56,19 @@ public class FilesWrk {
         return newFolder;
     }
 
-    public void download(FileView f) {
+    public void download(File dir, FileView fw) {
+        if (fw.isDirectory()) {
+            DirectoryView dw = (DirectoryView) fw;
+            setChildren(dw, discord.treeGet(dw.getId()).getContent());
+            File newDir = new File(dir, fw.getName());
+            newDir.mkdir();
+            for (FileView f : dw.getChildren()) {
+                download(newDir, f);
+            }
+        } else {
+            Task<Void> task = tm.download(dir, fw);
+            updater.addTask(task);
+        }
     }
 
     public void delete(FileView f) {
@@ -75,17 +87,19 @@ public class FilesWrk {
 
     public DirectoryView getRoot() {
         DirectoryView root = new DirectoryView(null, "", Statics.ROOT_MESSAGE_ID, true);
-        setChildren(root, discord.getRoot().getContent().split("\\?", -1));
+        setChildren(root, discord.getRoot().getContent());
         return root;
     }
 
     public void setDirectoryChildren(DirectoryView dir) {
-        setChildren(dir, discord.treeGet(dir.getId() + "").getContent().split("\\?", -1));
+        setChildren(dir, discord.treeGet(dir.getId() + "").getContent());
     }
 
-    private void setChildren(DirectoryView dir, String[] msgContent) {
-        String dirs = msgContent[1];
-        String files = msgContent[2];
+    private void setChildren(DirectoryView dir, String msgContent) {
+        String[] arr = msgContent.split("\\?", -1);
+        String dirs = arr[1];
+        String files = arr[2];
+        dir.getChildren().clear();
         if (!dirs.isEmpty()) {
             for (String id : dirs.split("/")) {
                 String[] content = discord.treeGet(id).getContent().split("\\?", -1);
@@ -100,7 +114,6 @@ public class FilesWrk {
                 dir.getChildren().add(child);
             }
         }
-
     }
 
     public FileView upload(File file, DirectoryView parent) {
@@ -110,7 +123,7 @@ public class FilesWrk {
                 upload(f, newDir);
             }
             return newDir;
-        }
+        } 
         if (file.exists()) {
             String ID = discord.treeSend(file.getName() + "?");
             Task<Void> task = tm.upload(file, ID, parent);

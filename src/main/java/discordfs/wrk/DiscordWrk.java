@@ -25,7 +25,6 @@ package discordfs.wrk;
 
 import discordfs.helpers.PropertiesManager;
 import discordfs.helpers.Statics;
-import java.io.File;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.Message;
@@ -56,6 +55,7 @@ public class DiscordWrk {
     }
 
     public String filesSend(byte[] data, String name, String msg) {
+        
         return filesChan.sendFile(data, name, new MessageBuilder().append(msg).build()).complete().getId();
     }
 

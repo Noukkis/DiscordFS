@@ -29,6 +29,7 @@ import discordfs.beans.FileTreeCell;
 import discordfs.helpers.Statics;
 import discordfs.wrk.DiscordWrk;
 import discordfs.wrk.FilesWrk;
+import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
@@ -38,6 +39,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.image.ImageView;
+import javafx.stage.DirectoryChooser;
 import javax.security.auth.login.LoginException;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDABuilder;
@@ -70,7 +73,11 @@ public class Ctrl implements Initializable {
 
     @FXML
     private void onDownload(ActionEvent event) {
-        wrk.download(tree.getSelectionModel().getSelectedItem().getValue());
+        DirectoryChooser dc = new DirectoryChooser();
+        File f = dc.showDialog(tree.getScene().getWindow());
+        if (f != null) {
+            wrk.download(f, tree.getSelectionModel().getSelectedItem().getValue());
+        }
     }
 
     @FXML
@@ -95,6 +102,7 @@ public class Ctrl implements Initializable {
         dialog.showAndWait().ifPresent((name) -> {
             FileView f = wrk.createFolder(selected.getValue(), name);
             TreeItem<FileView> newItem = createTreeItem(f);
+            newItem.setGraphic(new ImageView(Statics.IMG_FOLDER));
             selected.getChildren().add(newItem);
             tree.getSelectionModel().select(newItem);
         });
@@ -114,12 +122,17 @@ public class Ctrl implements Initializable {
 
     private void itemOnExpand(TreeItem<FileView> item) {
         new Thread(() -> {
-            for (TreeItem<FileView> treeItem : item.getChildren()) {
-                if (treeItem.getValue().isDirectory()) {
-                    DirectoryView dir = (DirectoryView) treeItem.getValue();
+            for (TreeItem<FileView> child : item.getChildren()) {
+                child.setExpanded(false);
+                if (child.getValue().isDirectory()) {
+                    DirectoryView dir = (DirectoryView) child.getValue();
                     wrk.setDirectoryChildren(dir);
-                    setChildren(treeItem, dir);
+                    setChildren(child, dir);
+                    child.setGraphic(new ImageView(Statics.IMG_FOLDER));
                 }
+                FileView temp = child.getValue();
+                child.setValue(null);
+                child.setValue(temp);
             }
         }).start();
     }
@@ -133,6 +146,9 @@ public class Ctrl implements Initializable {
                 }
             });
         }
+        ti.setGraphic(new ImageView(value.isRoot() ? Statics.IMG_FOLDER
+                : value.isDirectory() ? Statics.IMG_LOADING_FOLDER
+                : Statics.IMG_FILE));
         return ti;
     }
 

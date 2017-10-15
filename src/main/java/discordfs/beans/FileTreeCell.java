@@ -24,6 +24,7 @@
 package discordfs.beans;
 
 import discordfs.Ctrl;
+import discordfs.helpers.Statics;
 import java.io.File;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
@@ -36,13 +37,9 @@ import javafx.scene.input.TransferMode;
  * @author Jordan Vesy
  */
 public class FileTreeCell extends TreeCell<FileView> {
-    
-    private static final String IMG_FOLDER = "/images/folder.png";
-    private static final String IMG_FILE = "/images/file.png";
 
     private Ctrl ctrl;
     
-
     public FileTreeCell(Ctrl ctrl) {
         this.ctrl = ctrl;
     }
@@ -55,7 +52,7 @@ public class FileTreeCell extends TreeCell<FileView> {
             setGraphic(null);
         } else {
             setText(item.toString());
-            setGraphic(new ImageView(item.isDirectory() ? IMG_FOLDER : IMG_FILE));
+            setGraphic(getTreeItem().getGraphic());
         }
 
         setOnDragOver((event) -> {

@@ -48,8 +48,8 @@ public final class PropertiesManager {
             props.load(new FileReader(CONFIG_FILE));
             Statics.BOT_TOKEN = props.getProperty("botToken");
             Statics.FILES_CHAN_ID = Long.parseLong(props.getProperty("filesChanID"));
-            Statics.ROOT_MESSAGE_ID = props.getProperty("rootMessageID");
             Statics.TREE_CHAN_ID = Long.parseLong(props.getProperty("treeChanID"));
+            Statics.ROOT_MESSAGE_ID = props.getProperty("rootMessageID");
         } catch (IOException ex) {
             Logger.getLogger(PropertiesManager.class.getName()).log(Level.SEVERE, null, ex);
         }

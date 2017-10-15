@@ -12,13 +12,18 @@ import java.util.logging.Logger;
  * @author Jordan Vesy
  */
 public final class Statics {
+    
+    
+    
+    public static final int MAX_FILE_SIZE = 8388608;
+    public static final String IMG_FILE = "/images/file.png";
+    public static final String IMG_FOLDER = "/images/folder.png";
+    public static final String IMG_LOADING_FOLDER = "/images/loadingFolder.png";
 
     public static String BOT_TOKEN;
     public static long TREE_CHAN_ID;
     public static long FILES_CHAN_ID;
     public static String ROOT_MESSAGE_ID;
-    
-    public static final int MAX_FILE_SIZE = 8388608;
 
     public static byte[][] splitFile(File f, int size) {
         try {

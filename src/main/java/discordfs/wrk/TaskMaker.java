@@ -54,6 +54,7 @@ public final class TaskMaker {
                 String dirs = content[1];
                 dirs += newDir.getId() + "/";
                 m.editMessage(content[0] + "?" + dirs + "?" + content[2]).complete();
+                updateProgress(2, 2);
                 return null;
             }
         };
@@ -70,6 +71,7 @@ public final class TaskMaker {
                 String content = m.getContent();
                 content = content.replace(f.getId() + "/", "");
                 m.editMessage(content).complete();
+                updateProgress(2, 2);
                 return null;
             }
         };
@@ -96,8 +98,26 @@ public final class TaskMaker {
                 treeMsg.editMessage(treeMsg.getContent() + msg).complete();
                 Message parentMsg = discord.treeGet(parent.getId());
                 parentMsg.editMessage(parentMsg.getContent() + treeMsg.getId() + "/").complete();
+                updateProgress(max, max);
                 return null;
             }
         };
+    }
+
+    public Task<Void> download(File dir, FileView fw) {
+        return new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                updateTitle("Downloading \"" + fw.getName() + "\"");
+                updateProgress(0, 2);
+                String id = discord.treeGet(fw.getId()).getContent().split("\\?")[1];
+                updateProgress(1, 2);
+                File f = new File(dir, fw.getName());
+                discord.filesGet(id).getAttachments().get(0).download(f);
+                updateProgress(2, 2);
+                return null;
+            }
+        };
+
     }
 }
