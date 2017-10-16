@@ -49,7 +49,8 @@ public final class PropertiesManager {
             Statics.BOT_TOKEN = props.getProperty("botToken");
             Statics.FILES_CHAN_ID = Long.parseLong(props.getProperty("filesChanID"));
             Statics.TREE_CHAN_ID = Long.parseLong(props.getProperty("treeChanID"));
-            Statics.ROOT_MESSAGE_ID = props.getProperty("rootMessageID");
+            String rmid = props.getProperty("rootMessageID");
+            Statics.ROOT_MESSAGE_ID = rmid != null ? rmid : "000";
         } catch (IOException ex) {
             Logger.getLogger(PropertiesManager.class.getName()).log(Level.SEVERE, null, ex);
         }
