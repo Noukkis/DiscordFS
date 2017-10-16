@@ -23,23 +23,21 @@
  */
 package discordfs.beans;
 
-import java.util.ArrayList;
+import discordfs.wrk.FilesWrk;
+import javafx.scene.control.TreeItem;
 
 /**
  *
  * @author Jordan Vesy
  */
-public class DirectoryView extends FileView {
+public class DirectoryItem extends FileItem {
 
-    private ArrayList<FileView> children;
-
-    public DirectoryView(DirectoryView parent, String name, String id) {
-        this(parent, name, id, false);
+    public DirectoryItem(FilesWrk wrk, String name, String id) {
+        this(wrk, name, id, false);
     }
 
-    public DirectoryView(DirectoryView parent, String name, String id, boolean root) {
-        super(parent, name, id, root);
-        this.children = new ArrayList<>();
+    public DirectoryItem(FilesWrk wrk, String name, String id, boolean root) {
+        super(wrk, name, id, root);
     }
 
     @Override
@@ -50,15 +48,13 @@ public class DirectoryView extends FileView {
     @Override
     public int getSize() {
         int n = 1;
-        for (FileView child : children) {
+        for (TreeItem<String> c : getChildren()) {
+            FileItem child = (FileItem) c;
             if(child.isDirectory()) {
                 n += child.getSize();
             }
         }
         return n;
     }
-
-    public ArrayList<FileView> getChildren() {
-        return children;
-    }
+    
 }

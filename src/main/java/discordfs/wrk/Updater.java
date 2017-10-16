@@ -25,6 +25,7 @@ package discordfs.wrk;
 
 import java.util.ArrayList;
 import javafx.concurrent.Task;
+import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -55,30 +56,33 @@ public class Updater {
         stage = new Stage();
         Scene scene = new Scene(sp);
         stage.setScene(scene);
-        stage.setTitle("Updater");
+        stage.setTitle("Queue");
         stage.setHeight(400);
         stage.setWidth(600);
     }
-    
+
     public void show() {
         stage.show();
     }
 
-    public void addTask(Task task) {
+    public void addTask(String name, Task task) {
         ProgressBar pb = new ProgressBar();
-        Label lblTitle = new Label();
+        Label lblTitle = new Label(name);
         pb.progressProperty().bind(task.progressProperty());
-        lblTitle.textProperty().bind(task.titleProperty());
         VBox vb = new VBox(5, lblTitle, pb, new Separator(Orientation.HORIZONTAL));
         vb.setAlignment(Pos.CENTER_LEFT);
         root.getChildren().add(vb);
         lblTitle.setPrefWidth(600);
         pb.setPrefWidth(600);
+        EventHandler before = task.getOnSucceeded();
         task.setOnSucceeded((event) -> {
             root.getChildren().remove(vb);
             queue.remove(task);
             if (queue.size() > 0) {
                 new Thread(queue.get(0)).start();
+            }
+            if (before != null) {
+                before.handle(event);
             }
         });
         queue.add(task);

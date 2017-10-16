@@ -43,6 +43,7 @@ public class Main extends Application {
         Parent root = FXMLLoader.load(getClass().getResource("/fxml/View.fxml"));
         Scene scene = new Scene(root);
         stage.setScene(scene);
+        stage.setTitle("DiscordFS");
         stage.setOnCloseRequest((event) -> {
             System.exit(0);
         });

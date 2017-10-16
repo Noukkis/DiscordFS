@@ -23,12 +23,17 @@
  */
 package discordfs.wrk;
 
-import discordfs.beans.DirectoryView;
-import discordfs.beans.FileView;
+import discordfs.beans.DirectoryItem;
+import discordfs.beans.FileItem;
 import discordfs.helpers.PropertiesManager;
 import discordfs.helpers.Statics;
 import java.io.File;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.concurrent.Task;
+import javafx.scene.control.TreeItem;
+import javafx.scene.image.ImageView;
 
 /**
  *
@@ -43,40 +48,33 @@ public class FilesWrk {
     public FilesWrk(DiscordWrk discord) {
         this.discord = discord;
         updater = new Updater();
-        tm = new TaskMaker(discord);
+        tm = new TaskMaker(this, discord);
     }
 
-    public DirectoryView createFolder(FileView f, String name) {
-        DirectoryView parent = f.isDirectory() ? (DirectoryView) f : f.getParent();
-        String id = discord.treeSend(name + "??");
-        DirectoryView newFolder = new DirectoryView(parent, name, id);
-        parent.getChildren().add(newFolder);
-        Task<Void> task = tm.createFolder(newFolder);
-        updater.addTask(task);
-        return newFolder;
-    }
-
-    public void download(File dir, FileView fw) {
-        if (fw.isDirectory()) {
-            DirectoryView dw = (DirectoryView) fw;
-            setChildren(dw, discord.treeGet(dw.getId()).getContent());
-            File newDir = new File(dir, fw.getName());
-            newDir.mkdir();
-            for (FileView f : dw.getChildren()) {
-                download(newDir, f);
+    public void createFolder(FileItem f, String name) {
+        DirectoryItem parent = f.isDirectory() ? (DirectoryItem) f : f.getParentDir();
+        Task<DirectoryItem> task = tm.createFolder(parent, name);
+        task.setOnSucceeded((event) -> {
+            try {
+                task.get().setGraphic(new ImageView(Statics.IMG_FOLDER));
+            } catch (InterruptedException | ExecutionException ex) {
+                Logger.getLogger(FilesWrk.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } else {
-            Task<Void> task = tm.download(dir, fw);
-            updater.addTask(task);
-        }
+        });
+        updater.addTask("Creating \"" + name + "\" folder", task);
     }
 
-    public void delete(FileView f) {
+    public void download(File dir, FileItem fi) {
+        Task<Void> task = tm.download(dir, fi);
+        updater.addTask("downloading \"" + fi.getName() + "\"", task);
+    }
+
+    public void delete(FileItem f) {
         if (f.isRoot()) {
             PropertiesManager.setRootMessageID(discord.treeSend("??"));
         } else {
-            Task<Void> task = tm.delete(f);
-            updater.addTask(task);
+            Task<Void> task = tm.delete(f, f.getParentDir());
+            updater.addTask("Deleting \"" + f.getName() + "\"", task);
             f.getParent().getChildren().remove(f);
         }
     }
@@ -85,17 +83,17 @@ public class FilesWrk {
         return updater;
     }
 
-    public DirectoryView getRoot() {
-        DirectoryView root = new DirectoryView(null, "", Statics.ROOT_MESSAGE_ID, true);
+    public DirectoryItem getRoot() {
+        DirectoryItem root = new DirectoryItem(this, "root", Statics.ROOT_MESSAGE_ID, true);
         setChildren(root, discord.getRoot().getContent());
         return root;
     }
 
-    public void setDirectoryChildren(DirectoryView dir) {
+    public void setDirectoryChildren(DirectoryItem dir) {
         setChildren(dir, discord.treeGet(dir.getId() + "").getContent());
     }
 
-    private void setChildren(DirectoryView dir, String msgContent) {
+    public void setChildren(DirectoryItem dir, String msgContent) {
         String[] arr = msgContent.split("\\?", -1);
         String dirs = arr[1];
         String files = arr[2];
@@ -103,35 +101,43 @@ public class FilesWrk {
         if (!dirs.isEmpty()) {
             for (String id : dirs.split("/")) {
                 String[] content = discord.treeGet(id).getContent().split("\\?", -1);
-                DirectoryView child = new DirectoryView(dir, content[0], id);
+                DirectoryItem child = new DirectoryItem(this, content[0], id);
                 dir.getChildren().add(child);
             }
         }
         if (!files.isEmpty()) {
             for (String id : files.split("/")) {
                 String[] content = discord.treeGet(id).getContent().split("\\?", -1);
-                FileView child = new FileView(dir, content[0], id);
+                FileItem child = new FileItem(this, content[0], id);
                 dir.getChildren().add(child);
             }
         }
     }
 
-    public FileView upload(File file, DirectoryView parent) {
+    public void upload(File file, DirectoryItem parent) {
+        parent.setExpanded(true);
+        parent.setGraphic(new ImageView(Statics.IMG_LOADING_FOLDER));
         if (file.isDirectory()) {
-            DirectoryView newDir = createFolder(parent, file.getName());
-            for (File f : file.listFiles()) {
-                upload(f, newDir);
-            }
-            return newDir;
-        } 
-        if (file.exists()) {
-            String ID = discord.treeSend(file.getName() + "?");
-            Task<Void> task = tm.upload(file, ID, parent);
-            updater.addTask(task);
-            FileView newFile = new FileView(parent, file.getName(), ID);
-            parent.getChildren().add(newFile);
-            return newFile;
+            Task<DirectoryItem> task = tm.createFolder(parent, file.getName());
+            task.setOnSucceeded((event) -> {
+                try {
+                    DirectoryItem newDir = task.get();
+                    parent.setGraphic(new ImageView(Statics.IMG_FOLDER));
+                    newDir.setGraphic(new ImageView(Statics.IMG_FOLDER));
+                    for (File f : file.listFiles()) {
+                        upload(f, newDir);
+                    }
+                } catch (InterruptedException | ExecutionException ex) {
+                    Logger.getLogger(FilesWrk.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            });
+            updater.addTask("Creating \"" + file.getName() + "\" folder", task);
+        } else if (file.exists()) {
+            Task<Void> task = tm.upload(file, parent);
+            task.setOnSucceeded((event) -> {
+                parent.setGraphic(new ImageView(Statics.IMG_FOLDER));
+            });
+            updater.addTask("Uploading \"" + file.getName() + "\"", task);
         }
-        return null;
     }
 }

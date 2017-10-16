@@ -23,11 +23,14 @@
  */
 package discordfs.wrk;
 
-import discordfs.beans.DirectoryView;
-import discordfs.beans.FileView;
+import discordfs.beans.DirectoryItem;
+import discordfs.beans.FileItem;
 import discordfs.helpers.Statics;
 import java.io.File;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.scene.control.TreeItem;
+import javafx.scene.image.ImageView;
 import net.dv8tion.jda.core.entities.Message;
 
 /**
@@ -37,36 +40,39 @@ import net.dv8tion.jda.core.entities.Message;
 public final class TaskMaker {
 
     private final DiscordWrk discord;
+    private final FilesWrk wrk;
 
-    public TaskMaker(DiscordWrk discord) {
+    public TaskMaker(FilesWrk wrk, DiscordWrk discord) {
         this.discord = discord;
+        this.wrk = wrk;
     }
 
-    public Task createFolder(DirectoryView newDir) {
-        return new Task<Void>() {
+    public Task<DirectoryItem> createFolder(DirectoryItem parent, String name) {
+        return new Task<DirectoryItem>() {
             @Override
-            protected Void call() throws Exception {
-                updateTitle("Creating \"" + newDir.getName() + "\" folder");
+            protected DirectoryItem call() throws Exception {
                 updateProgress(0, 2);
-                Message m = discord.treeGet(newDir.getParent().getId() + "");
+                String id = discord.treeSend(name + "??");
+                DirectoryItem newDir = new DirectoryItem(wrk, name, id);
+                parent.getChildren().add(newDir);
+                Message m = discord.treeGet(newDir.getParentDir().getId() + "");
                 updateProgress(1, 2);
                 String[] content = m.getContent().split("\\?", -1);
                 String dirs = content[1];
                 dirs += newDir.getId() + "/";
                 m.editMessage(content[0] + "?" + dirs + "?" + content[2]).complete();
                 updateProgress(2, 2);
-                return null;
+                return newDir;
             }
         };
     }
 
-    public Task delete(FileView f) {
+    public Task delete(FileItem f, DirectoryItem parent) {
         return new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                updateTitle("Deleting \"" + f.getName() + "\"");
                 updateProgress(0, 2);
-                Message m = discord.treeGet(f.getParent().getId());
+                Message m = discord.treeGet(parent.getId());
                 updateProgress(1, 2);
                 String content = m.getContent();
                 content = content.replace(f.getId() + "/", "");
@@ -77,11 +83,11 @@ public final class TaskMaker {
         };
     }
 
-    public Task upload(File file, String firstID, DirectoryView parent) {
+    public Task upload(File file, DirectoryItem parent) {
         return new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                updateTitle("Uploading \"" + file.getName() + "\"");
+                String firstID = discord.treeSend(file.getName() + "?");
                 int progress = 3;
                 updateProgress(0, 1);
                 Message treeMsg = discord.treeGet(firstID);
@@ -98,23 +104,39 @@ public final class TaskMaker {
                 treeMsg.editMessage(treeMsg.getContent() + msg).complete();
                 Message parentMsg = discord.treeGet(parent.getId());
                 parentMsg.editMessage(parentMsg.getContent() + treeMsg.getId() + "/").complete();
+                FileItem newFile = new FileItem(wrk, file.getName(), firstID);
+                parent.getChildren().add(newFile);
                 updateProgress(max, max);
                 return null;
             }
         };
     }
 
-    public Task<Void> download(File dir, FileView fw) {
+    public Task<Void> download(File dir, FileItem fi) {
         return new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                updateTitle("Downloading \"" + fw.getName() + "\"");
-                updateProgress(0, 2);
-                String id = discord.treeGet(fw.getId()).getContent().split("\\?")[1];
-                updateProgress(1, 2);
-                File f = new File(dir, fw.getName());
-                discord.filesGet(id).getAttachments().get(0).download(f);
-                updateProgress(2, 2);
+                if (fi.isDirectory()) {
+                    updateProgress(0, 3);
+                    DirectoryItem di = (DirectoryItem) fi;
+                    String content = discord.treeGet(di.getId()).getContent();
+                    updateProgress(1, 3);
+                    wrk.setChildren(di, content);
+                    updateProgress(2, 3);
+                    File newDir = new File(dir, fi.getName());
+                    newDir.mkdir();
+                    for (TreeItem<String> f : di.getChildren()) {
+                        Platform.runLater(() -> wrk.download(newDir, (FileItem) f));
+                    }
+                    updateProgress(3, 3);
+                } else {
+                    updateProgress(0, 2);
+                    String id = discord.treeGet(fi.getId()).getContent().split("\\?")[1];
+                    updateProgress(1, 2);
+                    File f = new File(dir, fi.getName());
+                    discord.filesGet(id).getAttachments().get(0).download(f);
+                    updateProgress(2, 2);
+                }
                 return null;
             }
         };

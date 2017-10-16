@@ -27,7 +27,6 @@ import discordfs.Ctrl;
 import discordfs.helpers.Statics;
 import java.io.File;
 import javafx.scene.control.TreeCell;
-import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
@@ -36,17 +35,19 @@ import javafx.scene.input.TransferMode;
  *
  * @author Jordan Vesy
  */
-public class FileTreeCell extends TreeCell<FileView> {
+public class FileTreeCell extends TreeCell<String> {
 
     private Ctrl ctrl;
-    
+
     public FileTreeCell(Ctrl ctrl) {
+        super();
         this.ctrl = ctrl;
     }
 
     @Override
-    protected void updateItem(FileView item, boolean empty) {
+    protected void updateItem(String item, boolean empty) {
         super.updateItem(item, empty);
+        
         if (empty || item == null) {
             setText(null);
             setGraphic(null);
@@ -56,7 +57,7 @@ public class FileTreeCell extends TreeCell<FileView> {
         }
 
         setOnDragOver((event) -> {
-            if (!empty && item != null && item.isDirectory()) {
+            if (!empty && item != null && getFileItem().isDirectory()) {
                 Dragboard db = event.getDragboard();
                 if (db.hasFiles()) {
                     event.acceptTransferModes(TransferMode.COPY);
@@ -72,13 +73,15 @@ public class FileTreeCell extends TreeCell<FileView> {
         });
 
         setOnDragDropped((event) -> {
-            if (!empty && item != null && item.isDirectory()) {
+            if (!empty && item != null && getFileItem().isDirectory()) {
                 for (File file : event.getDragboard().getFiles()) {
-                    FileView fw = ctrl.getWrk().upload(file, (DirectoryView) item);
-                    TreeItem<FileView> newItem = ctrl.createTreeItem(fw);
-                    getTreeItem().getChildren().add(newItem);
+                    ctrl.getWrk().upload(file, (DirectoryItem) getFileItem());
                 }
             }
         });
+    }
+
+    public final FileItem getFileItem() {
+        return (FileItem) getTreeItem();
     }
 }

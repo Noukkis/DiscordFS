@@ -23,8 +23,8 @@
  */
 package discordfs;
 
-import discordfs.beans.DirectoryView;
-import discordfs.beans.FileView;
+import discordfs.beans.DirectoryItem;
+import discordfs.beans.FileItem;
 import discordfs.beans.FileTreeCell;
 import discordfs.helpers.Statics;
 import discordfs.wrk.DiscordWrk;
@@ -53,7 +53,7 @@ import net.dv8tion.jda.core.exceptions.RateLimitedException;
 public class Ctrl implements Initializable {
 
     @FXML
-    private TreeView<FileView> tree;
+    private TreeView<String> tree;
 
     private FilesWrk wrk;
 
@@ -63,7 +63,7 @@ public class Ctrl implements Initializable {
             DiscordWrk bot = new DiscordWrk(new JDABuilder(AccountType.BOT).setToken(Statics.BOT_TOKEN).buildBlocking());
             wrk = new FilesWrk(bot);
             refresh();
-            tree.setCellFactory((TreeView<FileView> list) -> new FileTreeCell(this));
+            tree.setCellFactory((TreeView<String> list) -> new FileTreeCell(this));
             wrk.getUpdater().show();
         } catch (LoginException | IllegalArgumentException | InterruptedException | RateLimitedException ex) {
             ex.printStackTrace();
@@ -76,35 +76,30 @@ public class Ctrl implements Initializable {
         DirectoryChooser dc = new DirectoryChooser();
         File f = dc.showDialog(tree.getScene().getWindow());
         if (f != null) {
-            wrk.download(f, tree.getSelectionModel().getSelectedItem().getValue());
+            wrk.download(f, (FileItem) tree.getSelectionModel().getSelectedItem());
         }
     }
 
     @FXML
     private void onDelete(ActionEvent event) {
-        TreeItem<FileView> selected = tree.getSelectionModel().getSelectedItem();
-        wrk.delete(selected.getValue());
-        TreeItem<FileView> parent = selected.getParent();
+        FileItem selected = (FileItem) tree.getSelectionModel().getSelectedItem();
+        DirectoryItem parent = selected.getParentDir();
+        wrk.delete(selected);
         if (parent != null) {
-            parent.getChildren().remove(selected);
+            tree.getSelectionModel().select(parent);
         }
-        tree.getSelectionModel().select(parent);
     }
 
     @FXML
     private void onNewFolder(ActionEvent event) {
-        TreeItem<FileView> selected = tree.getSelectionModel().getSelectedItem();
-
+        FileItem selected = (FileItem) tree.getSelectionModel().getSelectedItem();
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Nouveau dossier");
         dialog.setHeaderText("Nom du nouveau dossier");
         dialog.setContentText("Veuillez entrer le nom du dossier :");
         dialog.showAndWait().ifPresent((name) -> {
-            FileView f = wrk.createFolder(selected.getValue(), name);
-            TreeItem<FileView> newItem = createTreeItem(f);
-            newItem.setGraphic(new ImageView(Statics.IMG_FOLDER));
-            selected.getChildren().add(newItem);
-            tree.getSelectionModel().select(newItem);
+            wrk.createFolder(selected, name);
+            selected.setExpanded(true);
         });
     }
 
@@ -114,53 +109,7 @@ public class Ctrl implements Initializable {
     }
 
     private void refresh() {
-        DirectoryView rootDir = wrk.getRoot();
-        TreeItem<FileView> root = createTreeItem(rootDir);
-        tree.setRoot(root);
-        setChildren(root, rootDir);
-    }
-
-    private void itemOnExpand(TreeItem<FileView> item) {
-        new Thread(() -> {
-            for (TreeItem<FileView> child : item.getChildren()) {
-                child.setExpanded(false);
-                if (child.getValue().isDirectory()) {
-                    DirectoryView dir = (DirectoryView) child.getValue();
-                    wrk.setDirectoryChildren(dir);
-                    setChildren(child, dir);
-                    child.setGraphic(new ImageView(Statics.IMG_FOLDER));
-                }
-                FileView temp = child.getValue();
-                child.setValue(null);
-                child.setValue(temp);
-            }
-        }).start();
-    }
-
-    public TreeItem<FileView> createTreeItem(FileView value) {
-        TreeItem<FileView> ti = new TreeItem<>(value);
-        if (value.isDirectory()) {
-            ti.expandedProperty().addListener((observable, oldValue, newValue) -> {
-                if (newValue) {
-                    itemOnExpand(ti);
-                }
-            });
-        }
-        ti.setGraphic(new ImageView(value.isRoot() ? Statics.IMG_FOLDER
-                : value.isDirectory() ? Statics.IMG_LOADING_FOLDER
-                : Statics.IMG_FILE));
-        return ti;
-    }
-
-    public void setChildren(TreeItem root, DirectoryView dir) {
-        root.getChildren().clear();
-        for (FileView child : dir.getChildren()) {
-            TreeItem ti = createTreeItem(child);
-            root.getChildren().add(ti);
-            if (child.isDirectory()) {
-                setChildren(ti, (DirectoryView) child);
-            }
-        }
+        tree.setRoot(wrk.getRoot());
     }
 
     public FilesWrk getWrk() {

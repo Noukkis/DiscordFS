@@ -23,36 +23,62 @@
  */
 package discordfs.beans;
 
+import discordfs.helpers.Statics;
+import discordfs.wrk.FilesWrk;
 import java.util.Objects;
+import javafx.scene.control.TreeItem;
+import javafx.scene.image.ImageView;
 
 /**
  *
  * @author Jordan Vesy
  */
-public class FileView {
+public class FileItem extends TreeItem<String> {
 
-    private final DirectoryView parent;
     private final String name;
     private boolean root;
     private final String id;
 
-    public FileView(DirectoryView parent, String name, String id, boolean root) {
-        this.parent = parent;
+    public FileItem(FilesWrk wrk, String name, String id, boolean root) {
+        super(name);
         this.name = name;
         this.root = root;
         this.id = id;
+        if (isDirectory()) {
+            expandedProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue) {
+                    new Thread(() -> {
+                        for (TreeItem<String> c : getChildren()) {
+                            FileItem child = (FileItem) c;
+                            child.setExpanded(false);
+                            if (child.isDirectory()) {
+                                DirectoryItem dir = (DirectoryItem) child;
+                                wrk.setDirectoryChildren(dir);
+                                child.setGraphic(new ImageView(Statics.IMG_FOLDER));
+                            }
+                            String temp = child.getValue();
+                            child.setValue(null);
+                            child.setValue(temp);
+                        }
+                    }).start();
+                }
+            });
+        }
+        setGraphic(new ImageView(isRoot() ? Statics.IMG_FOLDER
+                : isDirectory() ? Statics.IMG_LOADING_FOLDER
+                        : Statics.IMG_FILE));
     }
 
-    public FileView(DirectoryView parent, String name, String id) {
-        this(parent, name, id, false);
+    public FileItem(FilesWrk wrk, String name, String id) {
+        this(wrk, name, id, false);
     }
 
     public int getSize() {
         return 0;
     }
 
-    public DirectoryView getParent() {
-        return parent;
+    public DirectoryItem getParentDir() {
+        return (DirectoryItem) getParent();
     }
 
     public boolean isDirectory() {
@@ -60,16 +86,11 @@ public class FileView {
     }
 
     public String getName() {
-        return name;
+        return (root) ? "" : name;
     }
 
     public String getId() {
         return id;
-    }
-
-    @Override
-    public String toString() {
-        return (root) ? "root" : name;
     }
 
     @Override
@@ -93,7 +114,7 @@ public class FileView {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final FileView other = (FileView) obj;
+        final FileItem other = (FileItem) obj;
         if (!Objects.equals(this.id, other.id)) {
             return false;
         }
