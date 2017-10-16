@@ -54,9 +54,8 @@ public class DiscordWrk {
         return treeChan.sendMessage(s).complete().getId();
     }
 
-    public String filesSend(byte[] data, String name, String msg) {
-        
-        return filesChan.sendFile(data, name, new MessageBuilder().append(msg).build()).complete().getId();
+    public String filesSend(byte[] data, String name) {
+        return filesChan.sendFile(data, name, null).complete().getId();
     }
 
     public Message treeGet(String id) {

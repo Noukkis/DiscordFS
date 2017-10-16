@@ -36,8 +36,14 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.stage.DirectoryChooser;
 import javax.security.auth.login.LoginException;
 import net.dv8tion.jda.core.AccountType;
@@ -55,6 +61,14 @@ public class Ctrl implements Initializable {
 
     private FilesWrk wrk;
 
+    private ContextMenu cutContext;
+    private ContextMenu linkContext;
+
+    private TreeItem clipboard;
+
+    @FXML
+    private ContextMenu context;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         try {
@@ -62,7 +76,9 @@ public class Ctrl implements Initializable {
             wrk = new FilesWrk(bot);
             refresh();
             tree.setCellFactory((TreeView<String> list) -> new FileTreeCell(this));
+            createContexts();
             wrk.getUpdater().show();
+            clipboard = null;
         } catch (LoginException | IllegalArgumentException | InterruptedException | RateLimitedException ex) {
             ex.printStackTrace();
             Platform.exit();
@@ -92,12 +108,16 @@ public class Ctrl implements Initializable {
     private void onNewFolder(ActionEvent event) {
         FileItem selected = (FileItem) tree.getSelectionModel().getSelectedItem();
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Nouveau dossier");
-        dialog.setHeaderText("Nom du nouveau dossier");
-        dialog.setContentText("Veuillez entrer le nom du dossier :");
+        dialog.setTitle("New Folder");
+        dialog.setHeaderText("Name");
+        dialog.setContentText("Please enter your new folder name :");
         dialog.showAndWait().ifPresent((name) -> {
-            wrk.createFolder(selected, name);
-            selected.setExpanded(true);
+            if (name.contains("?") || name.contains("/")) {
+                displayError("The name can't contain \"?\" or \"/\"");
+            } else {
+                wrk.createFolder(selected, name);
+                selected.setExpanded(true);
+            }
         });
     }
 
@@ -106,12 +126,79 @@ public class Ctrl implements Initializable {
         refresh();
     }
 
+    @FXML
+    private void onSymlink(ActionEvent event) {
+        clipboard = tree.getSelectionModel().getSelectedItem();
+        if (clipboard != null) {
+            clipboard.getGraphic().setOpacity(.5);
+            tree.setContextMenu(linkContext);
+        }
+    }
+
+    @FXML
+    private void onCut(ActionEvent event) {
+        clipboard = tree.getSelectionModel().getSelectedItem();
+        if (clipboard != null) {
+            clipboard.getGraphic().setOpacity(.5);
+            tree.setContextMenu(cutContext);
+        }
+    }
+
+    private void onCancel(ActionEvent event) {
+        clipboard.getGraphic().setOpacity(1);
+        clipboard = null;
+        tree.setContextMenu(context);
+    }
+
+    private void onPaste(ActionEvent event) {
+        TreeItem selected = tree.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            clipboard.getGraphic().setOpacity(1);
+            wrk.cutPaste((FileItem) clipboard, (FileItem) selected);
+            tree.setContextMenu(context);
+            clipboard = null;
+        }
+    }
+
+    private void onCreateLink(ActionEvent event) {
+        TreeItem selected = tree.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            clipboard.getGraphic().setOpacity(1);
+            wrk.symlink((FileItem) clipboard, (FileItem) selected);
+            tree.setContextMenu(context);
+            clipboard = null;
+        }
+    }
+
     private void refresh() {
         tree.setRoot(wrk.getRoot());
     }
 
     public FilesWrk getWrk() {
         return wrk;
+    }
+
+    public void displayError(String error) {
+        Alert a = new Alert(Alert.AlertType.ERROR);
+        a.setHeaderText(error);
+        a.showAndWait();
+    }
+
+    private void createContexts() {
+        MenuItem cancelPaste = new MenuItem("Cancel");
+        cancelPaste.setAccelerator(new KeyCodeCombination(KeyCode.ESCAPE, KeyCodeCombination.SHORTCUT_ANY));
+        cancelPaste.setOnAction((event) -> onCancel(event));
+        MenuItem cancelLink = new MenuItem("Cancel");
+        cancelLink.setAccelerator(new KeyCodeCombination(KeyCode.ESCAPE, KeyCodeCombination.SHORTCUT_ANY));
+        cancelLink.setOnAction((event) -> onCancel(event));
+        MenuItem paste = new MenuItem("Paste");
+        paste.setAccelerator(new KeyCodeCombination(KeyCode.V, KeyCodeCombination.SHORTCUT_DOWN));
+        paste.setOnAction((event) -> onPaste(event));
+        MenuItem createLink = new MenuItem("Create Symlink");
+        createLink.setAccelerator(new KeyCodeCombination(KeyCode.V, KeyCodeCombination.SHORTCUT_DOWN));
+        createLink.setOnAction((event) -> onCreateLink(event));
+        cutContext = new ContextMenu(paste, cancelPaste);
+        linkContext = new ContextMenu(createLink, cancelLink);
     }
 
 }

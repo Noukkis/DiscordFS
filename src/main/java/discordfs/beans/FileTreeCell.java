@@ -47,7 +47,7 @@ public class FileTreeCell extends TreeCell<String> {
     @Override
     protected void updateItem(String item, boolean empty) {
         super.updateItem(item, empty);
-        
+
         if (empty || item == null) {
             setText(null);
             setGraphic(null);
@@ -75,7 +75,11 @@ public class FileTreeCell extends TreeCell<String> {
         setOnDragDropped((event) -> {
             if (!empty && item != null && getFileItem().isDirectory()) {
                 for (File file : event.getDragboard().getFiles()) {
-                    ctrl.getWrk().upload(file, (DirectoryItem) getFileItem());
+                    if (verifieOk(file)) {
+                        ctrl.getWrk().upload(file, (DirectoryItem) getFileItem());
+                    } else {
+                        ctrl.displayError("The name can't contain \"?\" or \"/\"");
+                    }
                 }
             }
         });
@@ -83,5 +87,19 @@ public class FileTreeCell extends TreeCell<String> {
 
     public final FileItem getFileItem() {
         return (FileItem) getTreeItem();
+    }
+
+    private boolean verifieOk(File file) {
+        if (file.getName().contains("?") || file.getName().contains("/")) {
+            return false;
+        }
+        if (file.isDirectory()) {
+            for (File sub : file.listFiles()) {
+                if(!verifieOk(sub)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

@@ -28,6 +28,7 @@ import discordfs.wrk.FilesWrk;
 import java.util.Objects;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCombination;
 
 /**
  *

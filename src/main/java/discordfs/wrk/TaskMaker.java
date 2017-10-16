@@ -31,8 +31,8 @@ import java.nio.file.Files;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.TreeItem;
-import javafx.scene.image.ImageView;
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.entities.Message.Attachment;
 
 /**
  *
@@ -99,7 +99,7 @@ public final class TaskMaker {
                 for (int i = 0; i < bytes.length; i++) {
                     byte[] aByte = bytes[bytes.length - 1 - i];
                     try {
-                        msg = discord.filesSend(aByte, "part" + i, msg);
+                        msg = discord.filesSend(aByte, msg);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -148,12 +148,12 @@ public final class TaskMaker {
                     } else {
                         File temp = new File(dir, "temp" + (long) (Math.random() * Long.MAX_VALUE));
                         temp.mkdir();
-                        String msg = content[2];
-                        while (!msg.equals("final")) {
+                        String suite = content[2];
+                        while (!suite.equals("final")) {
                             File f = new File(temp, "part" + progress);
-                            Message m = discord.filesGet(msg);
-                            msg = m.getContent();
-                            m.getAttachments().get(0).download(f);
+                            Attachment a = discord.filesGet(suite).getAttachments().get(0);
+                            suite = a.getFileName();
+                            a.download(f);
                             progress++;
                             updateProgress(progress, max);
                         }

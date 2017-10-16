@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 import javafx.concurrent.Task;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
+import net.dv8tion.jda.core.entities.Message;
 
 /**
  *
@@ -56,7 +57,11 @@ public class FilesWrk {
         Task<DirectoryItem> task = tm.createFolder(parent, name);
         task.setOnSucceeded((event) -> {
             try {
-                task.get().setGraphic(new ImageView(Statics.IMG_FOLDER));
+                DirectoryItem d = task.get();
+                d.setGraphic(new ImageView(Statics.IMG_FOLDER));
+                String temp = d.getValue();
+                d.setValue(null);
+                d.setValue(temp);
             } catch (InterruptedException | ExecutionException ex) {
                 Logger.getLogger(FilesWrk.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -139,5 +144,35 @@ public class FilesWrk {
             });
             updater.addTask("Uploading \"" + file.getName() + "\"", task);
         }
+    }
+
+    public void cutPaste(FileItem clipboard, FileItem selected) {
+        symlink(clipboard, selected);
+        Message m = discord.treeGet(clipboard.getParentDir().getId());
+        m.editMessage(m.getContent().replace(clipboard.getId() + "/", "")).queue();
+        clipboard.getParent().getChildren().remove(clipboard);
+    }
+
+    public void symlink(FileItem clipboard, FileItem selected) {
+        DirectoryItem dir = selected.isDirectory() ? (DirectoryItem) selected : selected.getParentDir();
+        Message m = discord.treeGet(dir.getId());
+        if (clipboard.isDirectory()) {
+            String[] content = m.getContent().split("\\?", -1);
+            m.editMessage(content[0] + "?" + content[1] + clipboard.getId() + "/" + "?" + content[2]).queue();
+        } else {
+            m.editMessage(m.getContent() + "?" + clipboard.getId() + "/").queue();
+        }
+        dir.getChildren().add(clone(clipboard));
+    }
+
+    private FileItem clone(FileItem item) {
+        if (item.isDirectory()) {
+            FileItem clone = new DirectoryItem(this, item.getName(), item.getId(), item.isRoot());
+            for (TreeItem child : item.getChildren()) {
+                clone.getChildren().add(clone((FileItem) child));
+            }
+            return clone;
+        }
+        return new FileItem(this, item.getName(), item.getId());
     }
 }

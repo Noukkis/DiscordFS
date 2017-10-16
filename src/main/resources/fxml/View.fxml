@@ -28,6 +28,7 @@
 <?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.TreeView?>
+<?import javafx.scene.input.KeyCodeCombination?>
 <?import javafx.scene.layout.BorderPane?>
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="discordfs.Ctrl">
@@ -37,12 +38,34 @@
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </BorderPane.margin>
          <contextMenu>
-            <ContextMenu>
+            <ContextMenu fx:id="context">
               <items>
-                <MenuItem mnemonicParsing="false" onAction="#onDownload" text="Download" />
-                  <MenuItem mnemonicParsing="false" onAction="#onDelete" text="Delete" />
-                  <MenuItem mnemonicParsing="false" onAction="#onNewFolder" text="New Folder" />
-                  <MenuItem mnemonicParsing="false" onAction="#onRefresh" text="Refresh" />
+                <MenuItem mnemonicParsing="false" onAction="#onDownload" text="Download">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="D" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
+                     </accelerator></MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#onSymlink" text="Create Symlink">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="C" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#onCut" text="Cut">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="X" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#onNewFolder" text="New Folder">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="N" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
+                     </accelerator></MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#onRefresh" text="Refresh">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="R" control="UP" meta="UP" shift="UP" shortcut="DOWN" />
+                     </accelerator></MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#onDelete" text="Delete">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="DELETE" control="UP" meta="UP" shift="UP" shortcut="ANY" />
+                     </accelerator></MenuItem>
               </items>
             </ContextMenu>
          </contextMenu>
