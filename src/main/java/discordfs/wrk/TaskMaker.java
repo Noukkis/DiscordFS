@@ -27,6 +27,7 @@ import discordfs.beans.DirectoryItem;
 import discordfs.beans.FileItem;
 import discordfs.helpers.Statics;
 import java.io.File;
+import java.nio.file.Files;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.TreeItem;
@@ -87,21 +88,25 @@ public final class TaskMaker {
         return new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                String firstID = discord.treeSend(file.getName() + "?");
+                byte[][] bytes = Statics.splitFile(file, Statics.MAX_FILE_SIZE);
+                String firstID = discord.treeSend(file.getName() + "?" + bytes.length);
                 int progress = 3;
                 updateProgress(0, 1);
                 Message treeMsg = discord.treeGet(firstID);
-                byte[][] bytes = Statics.splitFile(file, Statics.MAX_FILE_SIZE);
                 int max = bytes.length + 5;
                 updateProgress(3, max);
                 String msg = "final";
                 for (int i = 0; i < bytes.length; i++) {
                     byte[] aByte = bytes[bytes.length - 1 - i];
-                    msg = discord.filesSend(aByte, "part" + i, msg);
+                    try {
+                        msg = discord.filesSend(aByte, "part" + i, msg);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     progress++;
                     updateProgress(progress, max);
                 }
-                treeMsg.editMessage(treeMsg.getContent() + msg).complete();
+                treeMsg.editMessage(treeMsg.getContent() + "?" + msg).complete();
                 Message parentMsg = discord.treeGet(parent.getId());
                 parentMsg.editMessage(parentMsg.getContent() + treeMsg.getId() + "/").complete();
                 FileItem newFile = new FileItem(wrk, file.getName(), firstID);
@@ -130,12 +135,40 @@ public final class TaskMaker {
                     }
                     updateProgress(3, 3);
                 } else {
-                    updateProgress(0, 2);
-                    String id = discord.treeGet(fi.getId()).getContent().split("\\?")[1];
-                    updateProgress(1, 2);
-                    File f = new File(dir, fi.getName());
-                    discord.filesGet(id).getAttachments().get(0).download(f);
-                    updateProgress(2, 2);
+                    updateProgress(0, 3);
+                    String[] content = discord.treeGet(fi.getId()).getContent().split("\\?");
+                    int max = Integer.parseInt(content[1]) * 2;
+                    int progress = 1;
+                    updateProgress(1, max);
+                    if (max <= 2) {
+                        File f = new File(dir, fi.getName());
+                        Message m = discord.filesGet(content[2]);
+                        m.getAttachments().get(0).download(f);
+                        updateProgress(2, max);
+                    } else {
+                        File temp = new File(dir, "temp" + (long) (Math.random() * Long.MAX_VALUE));
+                        temp.mkdir();
+                        String msg = content[2];
+                        while (!msg.equals("final")) {
+                            File f = new File(temp, "part" + progress);
+                            Message m = discord.filesGet(msg);
+                            msg = m.getContent();
+                            m.getAttachments().get(0).download(f);
+                            progress++;
+                            updateProgress(progress, max);
+                        }
+                        byte[] b = new byte[0];
+                        for (File f : temp.listFiles()) {
+                            b = Statics.concat(b, Files.readAllBytes(f.toPath()));
+                            progress++;
+                            updateProgress(progress, max);
+                        }
+                        Files.write(new File(dir, fi.getName()).toPath(), b);
+                        for (File f : temp.listFiles()) {
+                            f.delete();
+                        }
+                        temp.delete();
+                    }
                 }
                 return null;
             }

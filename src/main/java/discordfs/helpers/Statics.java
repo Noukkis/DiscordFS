@@ -12,10 +12,8 @@ import java.util.logging.Logger;
  * @author Jordan Vesy
  */
 public final class Statics {
-    
-    
-    
-    public static final int MAX_FILE_SIZE = 8388608;
+
+    public static final int MAX_FILE_SIZE = 8000000;
     public static final String IMG_FILE = "/images/file.png";
     public static final String IMG_FOLDER = "/images/folder.png";
     public static final String IMG_LOADING_FOLDER = "/images/loadingFolder.png";
@@ -47,6 +45,15 @@ public final class Statics {
             Logger.getLogger(Statics.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
+    }
+
+    public static byte[] concat(byte[] a, byte[] b) {
+        int aLen = a.length;
+        int bLen = b.length;
+        byte[] c = new byte[aLen + bLen];
+        System.arraycopy(a, 0, c, 0, aLen);
+        System.arraycopy(b, 0, c, aLen, bLen);
+        return c;
     }
 
     private Statics() {
