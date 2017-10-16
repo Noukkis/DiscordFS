@@ -39,10 +39,10 @@
          <contextMenu>
             <ContextMenu>
               <items>
-                <MenuItem mnemonicParsing="false" onAction="#onDownload" text="Telecharger" />
-                  <MenuItem mnemonicParsing="false" onAction="#onDelete" text="Supprimer" />
-                  <MenuItem mnemonicParsing="false" onAction="#onNewFolder" text="Nouveau Dossier" />
-                  <MenuItem mnemonicParsing="false" onAction="#onRefresh" text="Rafraichir" />
+                <MenuItem mnemonicParsing="false" onAction="#onDownload" text="Download" />
+                  <MenuItem mnemonicParsing="false" onAction="#onDelete" text="Delete" />
+                  <MenuItem mnemonicParsing="false" onAction="#onNewFolder" text="New Folder" />
+                  <MenuItem mnemonicParsing="false" onAction="#onRefresh" text="Refresh" />
               </items>
             </ContextMenu>
          </contextMenu>
